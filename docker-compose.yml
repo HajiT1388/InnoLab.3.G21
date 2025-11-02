@@ -1,0 +1,31 @@
+services:
+  server:
+    build:
+      context: './Grundriss A/.'
+      dockerfile: Dockerfile
+    container_name: inno3-server
+    ports:
+      - "5000:8080"       # host:container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - './Grundriss A/Server/wwwroot:/app/wwwroot'  # Hot-reload static content (optional)
+    restart: always
+  mqtt-publisher:
+    build: .
+    container_name: mqtt-publisher
+    restart: unless-stopped
+    environment:
+      - POWERSHELL_TELEMETRY_OPTOUT=1
+    # Falls du TLS oder eigene Broker-URL nutzen willst:
+    # environment:
+    #   - MQTT_BROKER=test.mosquitto.org
+    #   - MQTT_PORT=1883
+    #   - MQTT_TOPIC=building/floor
+    #   - MQTT_INTERVAL=3
+    # Optional: Logs in Echtzeit sehen
+    tty: true
+
+networks:
+  default:
+    driver: bridge

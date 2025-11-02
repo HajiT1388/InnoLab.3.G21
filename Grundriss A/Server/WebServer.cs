@@ -56,10 +56,12 @@ namespace LiveFloorServer
                 if (ctx.Request.IsWebSocketRequest &&
                     ctx.Request.RawUrl!.Equals("/ws", StringComparison.OrdinalIgnoreCase))
                 {
+                	Log("HandleWebSocketAsync " + ctx);
                     _ = HandleWebSocketAsync(ctx);
                 }
                 else
                 {
+                    Log("ServeStaticAsync " + ctx);
                     _ = ServeStaticAsync(ctx);
                 }
             }
@@ -105,19 +107,22 @@ namespace LiveFloorServer
         private async Task ServeStaticAsync(HttpListenerContext ctx)
         {
             var urlPath = ctx.Request.Url!.AbsolutePath;
+            Log("urlPath" + urlPath);
             if (urlPath == "/" || string.IsNullOrWhiteSpace(urlPath))
                 urlPath = "/index.html";
 
             var safePath = urlPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
             var fullPath = Path.GetFullPath(Path.Combine(_webRoot, safePath));
-
+		Log("safePath" + safePath);
+		Log("fullPath" + fullPath);
+		
             if (!fullPath.StartsWith(_webRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(fullPath))
             {
                 ctx.Response.StatusCode = 404;
                 ctx.Response.Close();
                 return;
             }
-
+		Log("ok fullPath" + fullPath);
             try
             {
                 if (_mime.TryGetValue(Path.GetExtension(fullPath), out var ct))

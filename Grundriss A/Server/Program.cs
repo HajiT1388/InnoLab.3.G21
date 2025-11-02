@@ -4,7 +4,11 @@ using MQTTnet.Client;
 using MQTTnet.Protocol;
 using System.Text;
 
-var prefix = "http://localhost:5000/";
+// Read the ASPNETCORE_URLS environment variable, or fallback
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://+:8080";
+
+// If there are multiple URLs, just pick the first one
+var prefix = urls.Split(';', StringSplitOptions.RemoveEmptyEntries).First();
 var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
 var webSrv = new WebServer(prefix, webRoot);
 _ = webSrv.RunAsync();
@@ -63,5 +67,5 @@ Console.WriteLine("[i] Abonniert: building/floor/+/airquality");
 Console.ResetColor();
 
 Console.WriteLine();
-Console.WriteLine("(ENTER), um das Programm zu beenden …");
-Console.ReadLine();
+Console.WriteLine("Server läuft... (STRG+C zum Beenden)");
+await Task.Delay(-1);
