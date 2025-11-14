@@ -36,7 +36,7 @@ namespace LiveFloorServer
         public WebServer(string prefix, string webRoot)
         {
             _prefix = prefix;
-            _webRoot = webRoot;
+            _webRoot = Path.GetFullPath(webRoot);
             Directory.CreateDirectory(_webRoot);
         }
 
@@ -106,7 +106,8 @@ namespace LiveFloorServer
 
         private async Task ServeStaticAsync(HttpListenerContext ctx)
         {
-            var urlPath = ctx.Request.Url!.AbsolutePath;
+            var url = ctx.Request.Url;
+            var urlPath = Uri.UnescapeDataString(url?.AbsolutePath ?? "/");
             Log("urlPath" + urlPath);
             if (urlPath == "/" || string.IsNullOrWhiteSpace(urlPath))
                 urlPath = "/index.html";
