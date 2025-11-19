@@ -14,7 +14,10 @@ namespace LiveFloorServer
         private readonly ConcurrentDictionary<Guid, WebSocket> _clients = new();
 
         private const int FloorCount = 7;
-        private int[] _currentValues = Enumerable.Repeat(100, FloorCount).ToArray();
+        private int[] _currentFloors = Enumerable.Repeat(100, FloorCount).ToArray();
+        private Dictionary<int, Dictionary<string, int>> _currentRooms = new();
+
+        private readonly SemaphoreSlim _broadcastLock = new(1, 1);
 
         private static readonly Dictionary<string, string> _mime = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -65,27 +68,55 @@ namespace LiveFloorServer
             }
         }
 
-        public async Task BroadcastAsync(int[] values)
+        public async Task BroadcastAsync(int[] floors, Dictionary<int, Dictionary<string, int>> rooms)
         {
-            _currentValues = values.ToArray();
-            foreach (var kv in _clients)
-                await SendAsync(kv.Value, _currentValues);
+            await _broadcastLock.WaitAsync();
+            try
+            {
+                _currentFloors = floors.ToArray();
+                _currentRooms = rooms.ToDictionary(
+                    x => x.Key,
+                    x => x.Value.ToDictionary(i => i.Key, i => i.Value, StringComparer.OrdinalIgnoreCase)
+                );
+
+                foreach (var kv in _clients)
+                    await SendAsync(kv.Value, _currentFloors, _currentRooms);
+            }
+            finally
+            {
+                _broadcastLock.Release();
+            }
         }
+
         private async Task HandleWebSocketAsync(HttpListenerContext ctx)
         {
             WebSocket ws;
-            try { ws = (await ctx.AcceptWebSocketAsync(null)).WebSocket; }
-            catch { ctx.Response.StatusCode = 500; ctx.Response.Close(); return; }
+            try
+            {
+                ws = (await ctx.AcceptWebSocketAsync(null)).WebSocket;
+            }
+            catch
+            {
+                ctx.Response.StatusCode = 500;
+                ctx.Response.Close();
+                return;
+            }
 
             var id = Guid.NewGuid();
             _clients.TryAdd(id, ws);
             Log($"WebSocket-Client verbunden ({_clients.Count})");
 
-            await SendAsync(ws, _currentValues);
+            await SendAsync(ws, _currentFloors, _currentRooms);
 
             var buffer = new byte[1];
-            try { while (ws.State == WebSocketState.Open) await ws.ReceiveAsync(buffer, CancellationToken.None); }
-            catch { }
+            try
+            {
+                while (ws.State == WebSocketState.Open)
+                    await ws.ReceiveAsync(buffer, CancellationToken.None);
+            }
+            catch
+            {
+            }
             finally
             {
                 _clients.TryRemove(id, out _);
@@ -94,12 +125,26 @@ namespace LiveFloorServer
             }
         }
 
-        private static async Task SendAsync(WebSocket ws, int[] values)
+        private static async Task SendAsync(WebSocket ws, int[] floors, Dictionary<int, Dictionary<string, int>> rooms)
         {
             if (ws.State != WebSocketState.Open) return;
-            var json = JsonSerializer.Serialize(new { values });
+
+            var payload = new
+            {
+                values = floors,
+                rooms = rooms
+            };
+
+            var json = JsonSerializer.Serialize(payload);
             var bytes = Encoding.UTF8.GetBytes(json);
-            await ws.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+
+            try
+            {
+                await ws.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+            }
+            catch
+            {
+            }
         }
 
         private async Task ServeStaticAsync(HttpListenerContext ctx)

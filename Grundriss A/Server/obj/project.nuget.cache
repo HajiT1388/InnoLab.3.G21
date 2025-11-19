@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "tLl4RJUzcjs=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Mosi1379\\Desktop\\InnoLab.3.G21\\Grundriss A\\Server\\TestserverCS.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Mosi1379\\.nuget\\packages\\mqttnet\\4.3.7.1207\\mqttnet.4.3.7.1207.nupkg.sha512"
+  ],
+  "logs": []
+}
