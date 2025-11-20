@@ -72,9 +72,18 @@ client.ApplicationMessageReceivedAsync += async e =>
 {
     try
     {
+        var topic = e.ApplicationMessage.Topic;
+        var parts = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
         var topic = e.ApplicationMessage.Topic ?? string.Empty;
         var parts = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
+        if (parts.Length == 6 &&
+            parts[0] == "building" &&
+            parts[1] == "floor" &&
+            int.TryParse(parts[2], out var floor) &&
+            parts[3] == "room" &&
+            parts[5] == "airquality")
         var lastSegmentIndex = parts.Length - 1;
         var suffixMatches = string.IsNullOrEmpty(topicSuffix) ||
                             (lastSegmentIndex >= 0 && string.Equals(parts[lastSegmentIndex], topicSuffix, StringComparison.OrdinalIgnoreCase));
@@ -84,17 +93,27 @@ client.ApplicationMessageReceivedAsync += async e =>
         if (suffixMatches && floorIndex >= 0 && floorIndex < parts.Length &&
             int.TryParse(parts[floorIndex], out var floor) && floor is >= 0 and < FloorCount)
         {
-            var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
-            if (int.TryParse(payload, out var value) && value is >= 0 and <= 100)
+            if (floor < 2 || floor > 6)
+                return;
+
+            if (!int.TryParse(payload, out var value) || value is < 0 or > 100)
+                return;
+
+            var roomName = parts[4];
+
+            if (!knownRoomsPerFloor.TryGetValue(floor, out var known) ||
+                Array.IndexOf(known, roomName) < 0)
             {
-                values[floor] = value;
-
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"[✓] MQTT empfangen -> Stockwerk {floor}, Wert {value}");
-                Console.ResetColor();
-
-                await webSrv.BroadcastAsync(values);
+                return;
             }
+
+            roomValues[floor][roomName] = value;
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"[V] {floor}OG, Raum {roomName}: {value}");
+            Console.ResetColor();
+
+            await webSrv.BroadcastAsync(floorValues, roomValues);
         }
     }
     catch (Exception ex)
@@ -105,6 +124,19 @@ client.ApplicationMessageReceivedAsync += async e =>
     }
 };
 
+var subOptions = factory.CreateSubscribeOptionsBuilder()
+    .WithTopicFilter(f =>
+    {
+        f.WithTopic("building/floor/+/room/+/airquality");
+        f.WithAtLeastOnceQoS();
+    })
+    .Build();
+
+await client.SubscribeAsync(subOptions);
+
+Console.ForegroundColor = ConsoleColor.Blue;
+Console.WriteLine("[i] Abonniert: building/floor/+/room/+/airquality");
+Console.ResetColor();
 client.DisconnectedAsync += async e =>
 {
     Console.ForegroundColor = ConsoleColor.Yellow;
