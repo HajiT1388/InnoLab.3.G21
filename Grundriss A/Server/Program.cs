@@ -2,7 +2,6 @@
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Protocol;
-using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -64,19 +63,42 @@ var mqttOptions = new MqttClientOptionsBuilder()
     .Build();
 
 var client = factory.CreateMqttClient();
+await client.ConnectAsync(mqttOptions, CancellationToken.None);
 var connectionLock = new SemaphoreSlim(1, 1);
-const int FloorCount = 7;
-var values = Enumerable.Repeat(100, FloorCount).ToArray();
+
+Console.ForegroundColor = ConsoleColor.Blue;
+Console.WriteLine("[i] Verbunden mit test.mosquitto.org:1883");
+Console.ResetColor();
+
+var floorValues = new[] { 100, 100, 100, 100, 100, 100, 100 };
+
+var knownRoomsPerFloor = new Dictionary<int, string[]>
+{
+    [2] = new[] { "A1.04B", "A2.07", "A2.12" },
+    [3] = new[] { "A3.06", "A3.11" },
+    [4] = new[] { "A4.36" },
+    [5] = new[] { "A5.09", "A5.11", "A5.18" },
+    [6] = new[] { "A6.09", "A6.23", "A6.28" }
+};
+
+var roomValues = new Dictionary<int, Dictionary<string, int>>();
+foreach (var kv in knownRoomsPerFloor)
+{
+    var d = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    foreach (var r in kv.Value)
+        d[r] = 100;
+    roomValues[kv.Key] = d;
+}
+
+await webSrv.BroadcastAsync(floorValues, roomValues);
 
 client.ApplicationMessageReceivedAsync += async e =>
 {
     try
     {
-        var topic = e.ApplicationMessage.Topic;
-        var parts = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
         var topic = e.ApplicationMessage.Topic ?? string.Empty;
         var parts = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
 
         if (parts.Length == 6 &&
             parts[0] == "building" &&
@@ -84,14 +106,6 @@ client.ApplicationMessageReceivedAsync += async e =>
             int.TryParse(parts[2], out var floor) &&
             parts[3] == "room" &&
             parts[5] == "airquality")
-        var lastSegmentIndex = parts.Length - 1;
-        var suffixMatches = string.IsNullOrEmpty(topicSuffix) ||
-                            (lastSegmentIndex >= 0 && string.Equals(parts[lastSegmentIndex], topicSuffix, StringComparison.OrdinalIgnoreCase));
-
-        var floorIndex = string.IsNullOrEmpty(topicSuffix) ? parts.Length - 1 : parts.Length - 2;
-
-        if (suffixMatches && floorIndex >= 0 && floorIndex < parts.Length &&
-            int.TryParse(parts[floorIndex], out var floor) && floor is >= 0 and < FloorCount)
         {
             if (floor < 2 || floor > 6)
                 return;
