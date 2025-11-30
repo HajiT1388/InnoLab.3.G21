@@ -14,5 +14,10 @@
   <ItemGroup>
     <PackageReference Include="MQTTnet" Version="4.*" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Update="wwwroot\index.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
 </Project>
