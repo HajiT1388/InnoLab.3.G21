@@ -423,7 +423,8 @@
             camera.updateProjectionMatrix();
         }
 
-        loader.load("GebeudeAVoll.glb", glb => {
+        // kw; MODELLNAME MODELLPFAD MODELL DATEINAME LADEN GLB GLTF
+        loader.load("GebABeta.glb", glb => {
             const root = glb.scene;
             building.add(root);
 
