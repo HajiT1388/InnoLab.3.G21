@@ -38,7 +38,7 @@ Write-Host ("[i] MQTT Publisher -> {0}:{1}, Topic '{2}/<floor>/{3}', Interval {4
 while ($true) {
     foreach ($floor in $rooms.Keys) {
         foreach ($room in $rooms[$floor]) {
-            $value = Get-Random -Minimum 0 -Maximum 100
+            $value = Get-Random -Minimum 350 -Maximum 2000
             $topic = "$topicPrefix/$floor/$room/$topicSuffix"
             
             try {

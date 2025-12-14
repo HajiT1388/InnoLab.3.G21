@@ -50,7 +50,8 @@ var mqttHost = GetEnv("MQTT_HOST", "test.mosquitto.org");
 var mqttPort = GetEnvInt("MQTT_PORT", 1883);
 var topicPrefix = NormalizeSegment(GetEnv("MQTT_TOPIC_PREFIX", "building/floor"));
 var topicSuffix = NormalizeSegment(GetEnv("MQTT_TOPIC_SUFFIX", "airquality"));
-var subscriptionTopic = CombineTopic(topicPrefix, "+", topicSuffix);
+// building/floor/+/+/airquality
+var subscriptionTopic = CombineTopic(topicPrefix, "+", "+", topicSuffix);
 
 Console.ForegroundColor = ConsoleColor.Blue;
 Console.WriteLine($"[i] MQTT-Ziel: {mqttHost}:{mqttPort}, Topic {subscriptionTopic}");
@@ -67,10 +68,10 @@ await client.ConnectAsync(mqttOptions, CancellationToken.None);
 var connectionLock = new SemaphoreSlim(1, 1);
 
 Console.ForegroundColor = ConsoleColor.Blue;
-Console.WriteLine("[i] Verbunden mit test.mosquitto.org:1883");
+Console.WriteLine("[i] Verbunden mit " + mqttHost + ":" + mqttPort);
 Console.ResetColor();
 
-var floorValues = new[] { 100, 100, 100, 100, 100, 100, 100 };
+var floorValues = new[] { 400, 400, 400, 400, 400, 400, 400 };
 
 var knownRoomsPerFloor = new Dictionary<int, string[]>
 {
@@ -86,7 +87,7 @@ foreach (var kv in knownRoomsPerFloor)
 {
     var d = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     foreach (var r in kv.Value)
-        d[r] = 100;
+        d[r] = 400;
     roomValues[kv.Key] = d;
 }
 
@@ -100,20 +101,20 @@ client.ApplicationMessageReceivedAsync += async e =>
         var parts = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
         var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
 
-        if (parts.Length == 6 &&
+        // Prüfe auf 5 Segmente: building/floor/<floor>/<roomName>/airquality
+        if (parts.Length == 5 &&
             parts[0] == "building" &&
             parts[1] == "floor" &&
-            int.TryParse(parts[2], out var floor) &&
-            parts[3] == "room" &&
-            parts[5] == "airquality")
+            int.TryParse(parts[2], out var floor) && // parts[2] = floor (z.B. 2)
+            parts[4] == "airquality")                // parts[4] = airquality
         {
             if (floor < 2 || floor > 6)
                 return;
 
-            if (!int.TryParse(payload, out var value) || value is < 0 or > 100)
+            if (!int.TryParse(payload, out var value) || value is < 0 or > 10000)
                 return;
 
-            var roomName = parts[4];
+            var roomName = parts[3]; // parts[3] = Raumname (z.B. A1.04B)
 
             if (!knownRoomsPerFloor.TryGetValue(floor, out var known) ||
                 Array.IndexOf(known, roomName) < 0)
@@ -141,7 +142,7 @@ client.ApplicationMessageReceivedAsync += async e =>
 var subOptions = factory.CreateSubscribeOptionsBuilder()
     .WithTopicFilter(f =>
     {
-        f.WithTopic("building/floor/+/room/+/airquality");
+        f.WithTopic(subscriptionTopic);
         f.WithAtLeastOnceQoS();
     })
     .Build();
@@ -149,7 +150,7 @@ var subOptions = factory.CreateSubscribeOptionsBuilder()
 await client.SubscribeAsync(subOptions);
 
 Console.ForegroundColor = ConsoleColor.Blue;
-Console.WriteLine("[i] Abonniert: building/floor/+/room/+/airquality");
+Console.WriteLine("[i] Abonniert: " + subscriptionTopic);
 Console.ResetColor();
 client.DisconnectedAsync += async e =>
 {

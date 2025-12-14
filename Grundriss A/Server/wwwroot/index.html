@@ -343,7 +343,7 @@
             if (!el) return;
             const b = el.querySelector(".badge");
             b.textContent = val;
-            b.className = `badge badge-val ${val >= 70 ? "badge-green" : val >= 40 ? "badge-yellow" : "badge-red"}`;
+            b.className = `badge badge-val ${val >= 1400 ? "badge-red" : val >= 800 ? "badge-yellow" : "badge-green"}`;
         }
         function clearRoomBadge(f, name) {
             const id = `room-${f}-${name.replace(/[^a-zA-Z0-9]/g, "_")}`;
