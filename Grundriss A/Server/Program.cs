@@ -4,6 +4,7 @@ using MQTTnet.Client;
 using MQTTnet.Protocol;
 using System.Text;
 using System.Threading;
+using System.Text.Json;
 
 static string GetListenerPrefix()
 {
@@ -95,12 +96,13 @@ await webSrv.BroadcastAsync(floorValues, roomValues);
 
 client.ApplicationMessageReceivedAsync += async e =>
 {
+    var topic = e.ApplicationMessage.Topic ?? string.Empty;
+    var parts = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
+    var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
+    int value = -1;
+
     try
     {
-        var topic = e.ApplicationMessage.Topic ?? string.Empty;
-        var parts = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
-
         // Prüfe auf 5 Segmente: building/floor/<floor>/<roomName>/airquality
         if (parts.Length == 5 &&
             parts[0] == "building" &&
@@ -111,16 +113,55 @@ client.ApplicationMessageReceivedAsync += async e =>
             if (floor < 2 || floor > 6)
                 return;
 
-            if (!int.TryParse(payload, out var value) || value is < 0 or > 10000)
-                return;
-
-            var roomName = parts[3]; // parts[3] = Raumname (z.B. A1.04B)
+            var roomName = parts[3];                 // parts[3] = Raumname (z.B. A1.04B)
 
             if (!knownRoomsPerFloor.TryGetValue(floor, out var known) ||
                 Array.IndexOf(known, roomName) < 0)
             {
                 return;
             }
+            
+            // Nur der Zahlenwert (EndlosPublisher)
+                if (int.TryParse(payload, out var directValue) && directValue is >= 0 and <= 10000)
+                {
+                    value = directValue;
+                }
+                // JSON-Objekt (Neues Format)
+                else 
+                {
+                    try 
+                    {
+                        using JsonDocument document = JsonDocument.Parse(payload);
+                        
+                        if (document.RootElement.TryGetProperty("co2", out JsonElement co2Element) &&
+                            co2Element.ValueKind == JsonValueKind.Number)
+                        {
+                            if (co2Element.TryGetDouble(out var doubleValue))
+                            {
+                                int intValue = (int)Math.Round(doubleValue); 
+                                
+                                if (intValue is >= 0 and <= 10000)
+                                {
+                                    value = intValue;
+                                }
+                            }
+                        }
+                    }
+                    catch (JsonException) 
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"[!] Ungültiges Datenformat für {topic}. Falsches JSON Format! \{\"id\":\"CC:8D:A2:80:6C:78\",\"co\":11.05311,\"alcohol\":3.046375,\"co2\":406.0189,\"toluen\":1.353772,\"nh4\":8.269641,\"aceton\":1.128059\"");
+                        Console.ResetColor();
+                    }
+                }
+
+                if (value == -1)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"[!] Ungültiges Datenformat für {topic}. Weder reine Zahl noch valides JSON gefunden.");
+                    Console.ResetColor();
+                    return;
+                }
 
             roomValues[floor][roomName] = value;
 
@@ -134,7 +175,7 @@ client.ApplicationMessageReceivedAsync += async e =>
     catch (Exception ex)
     {
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(ex);
+        Console.WriteLine($"[E] Fehler bei der Verarbeitung von {topic}: {ex.Message}");
         Console.ResetColor();
     }
 };
