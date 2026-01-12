@@ -150,8 +150,7 @@ client.ApplicationMessageReceivedAsync += async e =>
                     catch (JsonException) 
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"[!] Ungültiges Datenformat für {topic}. Falsches JSON Format! \{\"id\":\"CC:8D:A2:80:6C:78\",\"co\":11.05311,\"alcohol\":3.046375,\"co2\":406.0189,\"toluen\":1.353772,\"nh4\":8.269641,\"aceton\":1.128059\"");
-                        Console.ResetColor();
+                        Console.WriteLine($"[!] Ungültiges Datenformat für {topic}. Falsches JSON Format! {{\"id\":\"CC:8D:A2:80:6C:78\",\"co\":11.05311,\"alcohol\":3.046375,\"co2\":406.0189,\"toluen\":1.353772,\"nh4\":8.269641,\"aceton\":1.128059}}");
                     }
                 }
 
