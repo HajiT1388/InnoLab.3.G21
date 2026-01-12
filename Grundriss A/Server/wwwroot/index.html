@@ -59,12 +59,13 @@
             top: 18px;
             right: 18px;
             z-index: 3;
-            width: 310px;
-            background: rgba(40,40,40,.87);
-            backdrop-filter: blur(10px);
-            border-radius: 14px;
+            width: 320px;
+            background: linear-gradient(160deg, rgba(22,22,24,.96), rgba(16,16,18,.94));
+            backdrop-filter: blur(12px);
+            border-radius: 18px;
             padding: 18px;
-            box-shadow: 0 4px 24px rgba(0,0,0,.55)
+            border: 1px solid rgba(255,255,255,.08);
+            box-shadow: 0 10px 36px rgba(0,0,0,.6);
         }
 
             #panel h6 {
@@ -76,18 +77,23 @@
             }
 
         .btn-main {
-            background: #6c757d;
+            background: linear-gradient(135deg, #3a6ef5, #2b58c7);
             color: #fff;
-            border: none
+            border: 1px solid rgba(255,255,255,.12);
+            font-weight: 700;
+            letter-spacing: .1px;
+            transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
         }
 
             .btn-main:hover {
-                background: #5a6268
+                filter: brightness(1.05);
+                box-shadow: 0 10px 18px rgba(42,101,245,0.28);
+                transform: translateY(-1px);
             }
 
             .btn-main:active, .btn-main:focus {
-                background: #545c63;
-                box-shadow: 0 0 0 .25rem rgba(108,117,125,.5)
+                background: linear-gradient(135deg, #2f5ad7, #2348af);
+                box-shadow: 0 0 0 .2rem rgba(58,110,245,.35);
             }
 
         .badge-val {
@@ -98,25 +104,19 @@
             border-radius: 999px
         }
 
-        .badge-green {
-            background: #28a745
-        }
-
-        .badge-yellow {
-            background: #ffc107;
-            color: #111
-        }
-
-        .badge-red {
-            background: #dc3545
-        }
-
-        .badge-gray {
-            background: #6c757d
-        }
+        /* Badge-Palette: grün für hohe Werte, warm amber für Mittel, coral für niedrig */
+        .badge-green { background: #61d38b; color: #0e1a12; }
+        .badge-yellow { background: #f2b94c; color: #1e1e1e; }
+        .badge-red { background: #f16c5b; color: #1e1e1e; }
+        .badge-gray { background: #6c757d; color: #f5f5f5; }
 
         .floor-block {
-            margin-bottom: .4rem
+            margin-bottom: .7rem;
+            padding: .55rem .65rem;
+            border-radius: 14px;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.06);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.02), 0 8px 16px rgba(0,0,0,.32);
         }
 
         .room-line {
@@ -124,15 +124,18 @@
             justify-content: space-between;
             align-items: center;
             font-size: .78rem;
-            margin-left: .75rem;
-            margin-top: .25rem;
+            margin-left: .25rem;
+            margin-top: .2rem;
             cursor: pointer;
-            transition: background .15s ease
+            padding: .35rem .4rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: background .15s ease, border .15s ease
         }
 
             .room-line:hover {
-                background: rgba(255,255,255,.06);
-                border-radius: 8px
+                background: rgba(255,255,255,.05);
+                border: 1px solid rgba(255,255,255,.1)
             }
 
         .section-label {
@@ -159,6 +162,286 @@
                 opacity: 0;
                 pointer-events: none
             }
+
+        /* Detail-Drawer mit Luftqualitäts-UI */
+        #detailDrawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: min(520px, 86vw);
+            background: rgba(18, 18, 18, .96);
+            border-left: 1px solid rgba(255,255,255,.08);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.45);
+            padding: 18px;
+            overflow-y: auto;
+            z-index: 10;
+            transform: translateX(110%);
+            transition: transform .32s ease;
+            backdrop-filter: blur(8px);
+            --aq-lamp-rgb: 0,255,0;
+            --aq-glow-alpha: 0.55;
+            pointer-events: none;
+        }
+
+        #detailDrawer.open { transform: translateX(0); pointer-events: auto; }
+
+        #detailDrawer .detail-inner { display: flex; flex-direction: column; gap: 12px; }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .detail-sub {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: rgba(255,255,255,.65);
+        }
+
+        .detail-title { font-size: 1.1rem; font-weight: 700; }
+        .detail-room-meta { font-size: .86rem; color: rgba(255,255,255,.62); }
+
+        .detail-actions { display: flex; gap: 6px; }
+        .detail-close {
+            border: none;
+            background: rgba(255,255,255,.08);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+        .detail-close:hover { background: rgba(255,255,255,.12); }
+
+        .detail-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,.14);
+            background: rgba(255,255,255,.08);
+            font-size: .82rem;
+            color: #fff;
+            width: fit-content;
+        }
+
+        .aq-stage {
+            position: relative;
+            border-radius: 16px;
+            background: radial-gradient(circle at 50% 55%, rgba(255,255,255,0.02), rgba(0,0,0,0) 55%);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .aq-lamp-wrap {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .aq-lamp {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 30% 28%,
+                    rgba(255,255,255,0.95) 0%,
+                    rgba(255,255,255,0.35) 10%,
+                    rgba(var(--aq-lamp-rgb), 0.92) 33%,
+                    rgba(var(--aq-lamp-rgb), 0.35) 64%,
+                    rgba(0,0,0,0) 72%);
+            box-shadow:
+                0 0 18px rgba(255,255,255,0.06),
+                0 0 40px rgba(var(--aq-lamp-rgb), 0.28),
+                0 0 90px rgba(var(--aq-lamp-rgb), 0.20);
+            transform: translateZ(0);
+            animation: aq-pulse 2.8s ease-in-out infinite;
+        }
+
+            .aq-lamp::after {
+                content: "";
+                position: absolute;
+                inset: -240px;
+                border-radius: 50%;
+                background: radial-gradient(circle,
+                    rgba(var(--aq-lamp-rgb), var(--aq-glow-alpha)) 0%,
+                    rgba(var(--aq-lamp-rgb), 0.22) 18%,
+                    rgba(var(--aq-lamp-rgb), 0.10) 35%,
+                    rgba(0,0,0,0) 68%);
+                filter: blur(10px);
+                pointer-events: none;
+            }
+
+            .aq-lamp::before {
+                content: "";
+                position: absolute;
+                inset: 12px;
+                border-radius: 50%;
+                background: radial-gradient(circle at 30% 28%, rgba(255,255,255,0.65), rgba(255,255,255,0) 50%);
+                mix-blend-mode: screen;
+                opacity: 0.65;
+                pointer-events: none;
+            }
+
+        @keyframes aq-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .aq-hud {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .aq-score, .aq-reasons {
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.10);
+            backdrop-filter: blur(6px);
+        }
+        .aq-score { min-width: 160px; }
+        .aq-score .big { font-size: 30px; line-height: 1.05; font-weight: 800; letter-spacing: 0.2px; }
+        .aq-score .sub { margin-top: 4px; font-size: 12px; color: rgba(255,255,255,0.65); }
+
+        .aq-reasons { width: min(360px, 46vw); }
+        .aq-reasons .title { font-size: 12px; color: rgba(255,255,255,0.65); margin-bottom: 6px; }
+        .aq-reasons ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.25; color: rgba(255,255,255,0.86); }
+
+        .aq-panel {
+            border-radius: 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .aq-row {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.18);
+        }
+
+        .aq-row.disabled { opacity: 0.45; }
+        .aq-row.inactive .aq-meter-fill { background: rgba(255,255,255,0.18); }
+
+        .aq-topline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .aq-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+            .aq-label small {
+                font-weight: 600;
+                color: rgba(255,255,255,0.62);
+                margin-left: 6px;
+            }
+
+        .aq-meter-row {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .aq-value {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.28);
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.1px;
+        }
+
+        .aq-meter {
+            width: 100%;
+            height: 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .aq-meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #c2c2c2, #aaaaaa);
+            transition: width .25s ease;
+        }
+
+        .aq-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.06);
+            margin-right: 6px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.86);
+        }
+
+        .aq-statusline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 6px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(0,0,0,0.22);
+        }
+
+            .aq-statusline .s1 { font-weight: 800; letter-spacing: 0.2px; }
+            .aq-statusline .s2 { font-size: 12px; color: rgba(255,255,255,0.62); }
+
+        .aq-meta {
+            padding: 9px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(0,0,0,0.18);
+            font-size: 12px;
+            color: rgba(255,255,255,0.64);
+            line-height: 1.25;
+        }
+
+        @media (max-width: 700px) {
+            #detailDrawer { width: 100vw; }
+            .aq-hud { flex-direction: column; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
@@ -212,6 +495,108 @@
         </div>
     </div>
 
+    <div id="detailDrawer" aria-live="polite">
+        <div class="detail-inner">
+            <div class="detail-header">
+                <div>
+                    <div class="detail-sub">Raumdetail</div>
+                    <div id="detailTitle" class="detail-title">–</div>
+                    <div id="detailRoomMeta" class="detail-room-meta">Keine Auswahl</div>
+                </div>
+            <div class="detail-actions">
+                <button id="detailClose" class="detail-close" aria-label="Schließen">×</button>
+            </div>
+            </div>
+            <div id="detailSource" class="detail-pill">Keine Daten</div>
+
+            <div class="aq-stage">
+                <div class="aq-lamp-wrap">
+                    <div id="aq-lamp" class="aq-lamp" aria-label="Status-Lampe"></div>
+                </div>
+
+                <div class="aq-hud">
+                    <div class="aq-score">
+                        <div class="big"><span id="aq-scoreVal">-</span> / 100</div>
+                        <div class="sub" id="aq-scoreText">–</div>
+                    </div>
+
+                    <div class="aq-reasons">
+                        <div class="title">Aktive Status</div>
+                        <ul id="aq-reasonList">
+                            <li>Keine Werte.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="aq-panel">
+                <div class="aq-row" id="aq-row-co2">
+                    <div class="aq-topline">
+                        <div class="aq-label">
+                            <span>CO2</span>
+                            <small>(ppm)</small>
+                        </div>
+                    </div>
+                    <div class="aq-meter-row">
+                        <div class="aq-value" id="aq-val-co2">–</div>
+                        <div class="aq-meter"><div class="aq-meter-fill" id="aq-meter-co2"></div></div>
+                    </div>
+                </div>
+
+                <div class="aq-row" id="aq-row-temp">
+                    <div class="aq-topline">
+                        <div class="aq-label">
+                            <span>Temperatur</span>
+                            <small>(°C)</small>
+                        </div>
+                    </div>
+                    <div class="aq-meter-row">
+                        <div class="aq-value" id="aq-val-temp">–</div>
+                        <div class="aq-meter"><div class="aq-meter-fill" id="aq-meter-temp"></div></div>
+                    </div>
+                </div>
+
+                <div class="aq-row" id="aq-row-rh">
+                    <div class="aq-topline">
+                        <div class="aq-label">
+                            <span>Luftfeuchtigkeit</span>
+                            <small>(%)</small>
+                        </div>
+                    </div>
+                    <div class="aq-meter-row">
+                        <div class="aq-value" id="aq-val-rh">–</div>
+                        <div class="aq-meter"><div class="aq-meter-fill" id="aq-meter-rh"></div></div>
+                    </div>
+                </div>
+
+                <div class="aq-row" id="aq-row-pres">
+                    <div class="aq-topline">
+                        <div class="aq-label">
+                            <span>Luftdruck</span>
+                            <small>(mbar)</small>
+                        </div>
+                    </div>
+                    <div class="aq-meter-row">
+                        <div class="aq-value" id="aq-val-pres">–</div>
+                        <div class="aq-meter"><div class="aq-meter-fill" id="aq-meter-pres"></div></div>
+                    </div>
+                </div>
+
+                <div class="aq-statusline">
+                    <div>
+                        <div class="s1" id="aq-statusTitle">–</div>
+                        <div class="s2" id="aq-statusHint">–</div>
+                    </div>
+                    <div class="aq-pill" id="aq-enabledPill">–</div>
+                </div>
+
+                <div class="aq-meta" id="aq-metaText">
+                    Wähle einen sensortauglichen Raum aus der Liste, um die Messwerte und Berechnung anzuzeigen.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="loader">
         <div class="spinner-border text-light mb-3"></div>
         <div class="progress w-50"><div id="loadBar" class="progress-bar progress-bar-striped progress-bar-animated"></div></div>
@@ -227,6 +612,7 @@
         import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
         import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
         import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+        import { computeWellbeing } from "./comfort.js";
         import gsap from "gsap";
 
         function normId(str) {
@@ -237,10 +623,12 @@
                 .toUpperCase()
                 .replace(/[^A-Z0-9]/g, "");
         }
+        const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
         const FLOOR_BASE_OPACITY = 0.28;
         const ROOM_BASE_OPACITY = 0.28;
         const ALERT_COLOR = new THREE.Color(0xdc3545);
+        const DETAIL_DEFAULTS = { co2: 650, temp: 22.5, rh: 45, pres: 1013 };
 
         const renderer = new THREE.WebGLRenderer({ canvas: $("#canvas"), antialias: true });
         renderer.setPixelRatio(devicePixelRatio);
@@ -307,8 +695,193 @@
         const allRoomMeshes = [];
         const sensorRoomMeshes = Array(7).fill(0).map(() => ({}));
         const roomValues = {};
+        const roomDetails = {};
+        const roomAggregates = {};
 
         let selectedFloor = -1;
+        let selectedRoom = null;
+        let detailLiveData = null;
+
+        const detailDrawer = $("#detailDrawer");
+        const detailTitle = $("#detailTitle");
+        const detailRoomMeta = $("#detailRoomMeta");
+        const detailSource = $("#detailSource");
+        const detailCloseBtn = $("#detailClose");
+        const aqLamp = $("#aq-lamp");
+        const aqScoreVal = $("#aq-scoreVal");
+        const aqScoreText = $("#aq-scoreText");
+        const aqReasonList = $("#aq-reasonList");
+        const aqStatusTitle = $("#aq-statusTitle");
+        const aqStatusHint = $("#aq-statusHint");
+        const aqEnabledPill = $("#aq-enabledPill");
+        const aqMetaText = $("#aq-metaText");
+        const aqRows = { co2: $("#aq-row-co2"), temp: $("#aq-row-temp"), rh: $("#aq-row-rh"), pres: $("#aq-row-pres") };
+        const aqVal = { co2: $("#aq-val-co2"), temp: $("#aq-val-temp"), rh: $("#aq-val-rh"), pres: $("#aq-val-pres") };
+        const aqMeter = { co2: $("#aq-meter-co2"), temp: $("#aq-meter-temp"), rh: $("#aq-meter-rh"), pres: $("#aq-meter-pres") };
+        const AQ_RANGE = {
+            co2: { min: 0, max: 3000 },
+            temp: { min: 6, max: 40 },
+            rh: { min: 0, max: 100 },
+            pres: { min: 950, max: 1070 }
+        };
+
+        function normalizeEnabled(enabled, detail) {
+            const src = enabled || {};
+            const vals = {
+                co2: parseMaybeNumber(detail?.co2),
+                temp: parseMaybeNumber(detail?.temp),
+                rh: parseMaybeNumber(detail?.rh),
+                pres: parseMaybeNumber(detail?.pres)
+            };
+            return {
+                co2: (src.co2 ?? false) || vals.co2 != null,
+                temp: (src.temp ?? false) || vals.temp != null,
+                rh: (src.rh ?? false) || vals.rh != null,
+                pres: (src.pres ?? false) || vals.pres != null
+            };
+        }
+
+        function parseMaybeNumber(v) {
+            if (v === null || v === undefined) return null;
+            const n = Number(v);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        function buildLiveInputs(floor, name) {
+            const d = roomDetails[floor]?.[name];
+            const aggregate = roomAggregates[floor]?.[name];
+            if (d) {
+                const enabled = normalizeEnabled(d.enabled, d);
+                const hasSensors = !!(enabled.co2 || enabled.temp || enabled.rh || enabled.pres);
+                const inputs = {
+                    co2: parseMaybeNumber(d.co2) ?? DETAIL_DEFAULTS.co2,
+                    temp: parseMaybeNumber(d.temp) ?? DETAIL_DEFAULTS.temp,
+                    rh: parseMaybeNumber(d.rh) ?? DETAIL_DEFAULTS.rh,
+                    pres: parseMaybeNumber(d.pres) ?? DETAIL_DEFAULTS.pres,
+                    enabled
+                };
+                if (!hasSensors && typeof aggregate === "number") {
+                    const risk = 1 - clamp(aggregate / 100, 0, 1);
+                    const label = aggregate < 40 ? "Gefahr" : aggregate < 60 ? "Warnung" : aggregate < 75 ? "OK" : "Gute Luftqualität";
+                    const hint = aggregate < 40 ? "Werte im schädlichen Bereich." : aggregate < 60 ? "Werte spürbar suboptimal." : aggregate < 75 ? "In Ordnung, aber nicht ideal." : "Werte im Optimalbereich.";
+                    return {
+                        inputs: { ...DETAIL_DEFAULTS, enabled: { co2: false, temp: false, rh: false, pres: false } },
+                        result: { score: aggregate, risk, label, hint, parts: {}, reasons: ["Keine Sensordaten geliefert."] },
+                        source: d.scoreSource || "aggregate",
+                        hasSensors: false
+                    };
+                }
+                const result = (d.result && typeof d.result.score === "number") ? d.result : (hasSensors ? computeWellbeing(inputs) : null);
+                return { inputs, result, source: d.scoreSource || "sensor", hasSensors };
+            }
+
+            if (typeof aggregate === "number") {
+                const risk = 1 - clamp(aggregate / 100, 0, 1);
+                const label = aggregate < 40 ? "Gefahr" : aggregate < 60 ? "Warnung" : aggregate < 75 ? "OK" : "Gute Luftqualität";
+                const hint = aggregate < 40 ? "Werte im schädlichen Bereich." : aggregate < 60 ? "Werte spürbar suboptimal." : aggregate < 75 ? "In Ordnung, aber nicht ideal." : "Werte im Optimalbereich.";
+                return {
+                    inputs: { ...DETAIL_DEFAULTS, enabled: { co2: false, temp: false, rh: false, pres: false } },
+                    result: { score: aggregate, risk, label, hint, parts: {}, reasons: ["Keine Sensordaten geliefert."] },
+                    source: "aggregate",
+                    hasSensors: false
+                };
+            }
+
+            return null;
+        }
+
+        function applyDetailInputs(inputs) {
+            ["co2", "temp", "rh", "pres"].forEach(k => {
+                const val = inputs?.[k];
+                const on = inputs?.enabled?.[k] ?? false;
+                const range = AQ_RANGE[k];
+                const v = typeof val === "number" ? val : null;
+                aqVal[k].textContent = (on && v != null) ? v : "–";
+                const ratio = (on && v != null) ? clamp((v - range.min) / (range.max - range.min), 0, 1) : 0;
+                aqMeter[k].style.width = `${ratio * 100}%`;
+                aqRows[k].classList.toggle("disabled", !on);
+                aqRows[k].classList.toggle("inactive", !on);
+            });
+        }
+
+        function setLampColorFromRisk(risk) {
+            const mix = clamp(Math.pow(risk ?? 1, 0.85), 0, 1);
+            const r = Math.round(255 * mix);
+            const g = Math.round(255 * (1 - mix));
+            detailDrawer.style.setProperty("--aq-lamp-rgb", `${r},${g},0`);
+            const glow = clamp(0.18 + (0.70 - 0.18) * (1 - Math.pow(1 - mix, 1.35)), 0.18, 0.70);
+            detailDrawer.style.setProperty("--aq-glow-alpha", glow.toFixed(3));
+            aqLamp.style.animationDuration = `${clamp(2.9 - 1.1 * mix, 1.6, 2.9).toFixed(2)}s`;
+        }
+
+        function renderDetail(inputs, result, meta) {
+            const sourceText = meta?.sourceText || "Keine Daten";
+            detailSource.textContent = sourceText;
+            aqMetaText.textContent = meta?.metaText || "";
+
+            if (!inputs || !result) {
+                aqScoreVal.textContent = "-";
+                aqScoreText.textContent = "Keine Daten";
+                aqStatusTitle.textContent = "-";
+                aqStatusHint.textContent = "Keine Sensordaten empfangen.";
+                aqEnabledPill.textContent = "nichts aktiv";
+                aqReasonList.innerHTML = "<li>Keine Werte aktiv.</li>";
+                setLampColorFromRisk(0.5);
+                return;
+            }
+
+            const enabledKeys = Object.entries(inputs.enabled).filter(([, v]) => v).map(([k]) => ({ co2: "CO₂", temp: "Temp", rh: "rF", pres: "Druck" }[k]));
+            aqEnabledPill.textContent = enabledKeys.length ? `aktiv: ${enabledKeys.join(", ")}` : "nichts aktiv";
+
+            aqScoreVal.textContent = result.score?.toString() ?? "–";
+            aqScoreText.textContent = `Status: ${result.label ?? "-"}`;
+            aqStatusTitle.textContent = result.label ?? "-";
+            aqStatusHint.textContent = result.hint ?? "";
+
+            const reasons = (result.reasons && result.reasons.length ? result.reasons : ["Keine Werte aktiv."]).slice(0, 6);
+            aqReasonList.innerHTML = "";
+            reasons.forEach(r => {
+                const li = document.createElement("li");
+                li.textContent = r;
+                aqReasonList.appendChild(li);
+            });
+
+            setLampColorFromRisk(result.risk ?? 1);
+            applyDetailInputs(inputs);
+        }
+
+        function refreshDetailFromLive() {
+            if (!selectedRoom) return;
+            detailLiveData = buildLiveInputs(selectedRoom.floor, selectedRoom.name);
+            if (!detailLiveData) {
+                renderDetail(null, null, { sourceText: "Keine Daten", metaText: "Für diesen Raum liegen keine Messwerte vor." });
+                return;
+            }
+            applyDetailInputs({ ...detailLiveData.inputs });
+            const sourceText = detailLiveData.source === "sensor" ? "Live" : "Aggregierter Score";
+            const metaText = detailLiveData.hasSensors
+                ? "Live-Anzeige auf Basis der empfangenen Sensorwerte."
+                : "Es liegen nur aggregierte Werte vor, keine Einzelmessungen empfangen.";
+            renderDetail(detailLiveData.inputs, detailLiveData.result, { sourceText, metaText });
+        }
+
+        function openRoomDetail(floor, name) {
+            selectedRoom = { floor, name };
+            detailDrawer.classList.add("open");
+            detailTitle.textContent = name;
+            detailRoomMeta.textContent = `${floor}. Stock`;
+            refreshDetailFromLive();
+        }
+
+        function closeRoomDetail() {
+            selectedRoom = null;
+            detailDrawer.classList.remove("open");
+            detailLiveData = null;
+            detailTitle.textContent = "–";
+            detailRoomMeta.textContent = "Keine Auswahl";
+            renderDetail(null, null, { sourceText: "Keine Daten", metaText: "Wähle einen Raum aus der Liste." });
+        }
+        closeRoomDetail();
 
         function buildRoomUI() {
             for (let f = 2; f <= 6; f++) {
@@ -326,7 +899,7 @@
                     div.addEventListener("click", () => {
                         const def = sensorRoomMeshes[f][name];
                         if (def && def.mesh) {
-                            focusRoom(def.mesh, f);
+                            focusRoom(def.mesh, f, name);
                         } else {
                             focusFloor(f);
                         }
@@ -423,7 +996,6 @@
             camera.updateProjectionMatrix();
         }
 
-        // kw; MODELLNAME MODELLPFAD MODELL DATEINAME LADEN GLB GLTF
         loader.load("GebABeta.glb", glb => {
             const root = glb.scene;
             building.add(root);
@@ -567,18 +1139,91 @@
             }
         }
 
+        function handleWsData(data) {
+            let updated = false;
+
+            if (data.roomDetails) {
+                for (const key of Object.keys(data.roomDetails)) {
+                    const floor = parseInt(key, 10);
+                    const floorRooms = data.roomDetails[key] || {};
+                    roomDetails[floor] = roomDetails[floor] || {};
+                    roomValues[floor] = roomValues[floor] || {};
+
+                    for (const roomName of Object.keys(floorRooms)) {
+                        const detail = floorRooms[roomName] || {};
+                        const enabled = normalizeEnabled(detail.enabled, detail);
+                        const hasSensors = !!(enabled.co2 || enabled.temp || enabled.rh || enabled.pres);
+                        const inputs = {
+                            co2: parseMaybeNumber(detail.co2) ?? DETAIL_DEFAULTS.co2,
+                            temp: parseMaybeNumber(detail.temp) ?? DETAIL_DEFAULTS.temp,
+                            rh: parseMaybeNumber(detail.rh) ?? DETAIL_DEFAULTS.rh,
+                            pres: parseMaybeNumber(detail.pres) ?? DETAIL_DEFAULTS.pres,
+                            enabled
+                        };
+                        const computed = hasSensors
+                            ? ((detail.result && typeof detail.result.score === "number")
+                                ? detail.result
+                                : computeWellbeing(inputs))
+                            : (detail.result && typeof detail.result.score === "number" ? detail.result : null);
+
+                        roomDetails[floor][roomName] = {
+                            ...inputs,
+                            result: computed,
+                            scoreSource: detail.scoreSource || "sensor",
+                            hasSensors
+                        };
+
+                        if (hasSensors && typeof computed.score === "number") {
+                            roomValues[floor][roomName] = computed.score;
+                        }
+                    }
+                }
+                updated = true;
+            }
+
+            if (data.rooms) {
+                for (const key of Object.keys(data.rooms)) {
+                    const floor = parseInt(key, 10);
+                    roomAggregates[floor] = roomAggregates[floor] || {};
+                    roomValues[floor] = roomValues[floor] || {};
+                    roomDetails[floor] = roomDetails[floor] || {};
+                    const floorRooms = data.rooms[key] || {};
+                    for (const roomName of Object.keys(floorRooms)) {
+                        const val = floorRooms[roomName];
+                        roomAggregates[floor][roomName] = val;
+                        const hasSensors = roomDetails[floor]?.[roomName]?.hasSensors;
+                        if (!roomDetails[floor] || !roomDetails[floor][roomName] || hasSensors === false) {
+                            roomValues[floor][roomName] = val;
+                            if (!roomDetails[floor][roomName]) {
+                                const risk = 1 - clamp(val / 100, 0, 1);
+                                const label = val < 40 ? "Gefahr" : val < 60 ? "Warnung" : val < 75 ? "OK" : "Gute Luftqualität";
+                                const hint = val < 40 ? "Werte im schädlichen Bereich." : val < 60 ? "Werte spürbar suboptimal." : val < 75 ? "In Ordnung, aber nicht ideal." : "Werte im Optimalbereich.";
+                                roomDetails[floor][roomName] = {
+                                    ...DETAIL_DEFAULTS,
+                                    enabled: { co2: false, temp: false, rh: false, pres: false },
+                                    result: { score: val, risk, label, hint, parts: {}, reasons: ["Keine Einzelmessungen empfangen."] },
+                                    scoreSource: "aggregate",
+                                    hasSensors: false
+                                };
+                            }
+                        }
+                    }
+                }
+                updated = true;
+            }
+
+            if (updated) {
+                applyValues();
+                applyVisibility();
+                if (selectedRoom) refreshDetailFromLive();
+            }
+        }
+
         (function openWs() {
             const ws = new WebSocket("ws://localhost:5000/ws");
             ws.onmessage = ev => {
                 try {
-                    const data = JSON.parse(ev.data);
-                    if (data.rooms) {
-                        for (const key of Object.keys(data.rooms)) {
-                            roomValues[parseInt(key, 10)] = data.rooms[key];
-                        }
-                        applyValues();
-                        applyVisibility();
-                    }
+                    handleWsData(JSON.parse(ev.data));
                 } catch (err) {
                     console.warn("WS JSON Fehler:", err);
                 }
@@ -587,6 +1232,7 @@
 
         function focusBuilding() {
             selectedFloor = -1;
+            closeRoomDetail();
             $("#deselectBtn").classList.add("d-none");
             updateDropdownLabel();
             gsap.to(camera.position, {
@@ -610,6 +1256,7 @@
         function focusFloor(idx) {
             if (!floors[idx]) return;
             selectedFloor = idx;
+            closeRoomDetail();
             $("#deselectBtn").classList.remove("d-none");
             updateDropdownLabel();
 
@@ -624,7 +1271,7 @@
             applyValues();
         }
 
-        function focusRoom(mesh, floor) {
+        function focusRoom(mesh, floor, roomName) {
             selectedFloor = floor;
             $("#deselectBtn").classList.remove("d-none");
             updateDropdownLabel();
@@ -640,6 +1287,10 @@
 
             applyVisibility();
             applyValues();
+
+            if (roomName) {
+                openRoomDetail(floor, roomName);
+            }
         }
 
         $$(".js-floor").forEach(a => {
@@ -651,6 +1302,7 @@
         });
         $("#deselectBtn").onclick = focusBuilding;
         $("#resetBtn").onclick = focusBuilding;
+        detailCloseBtn.onclick = closeRoomDetail;
 
         let auto = false, rot = 0;
         $("#autoBtn").onclick = () => {
@@ -674,7 +1326,7 @@
                 const hitMesh = roomHits[0].object;
                 const def = CLICKABLE_ROOMS.find(r => r.mesh === hitMesh || hitMesh.parent === r.mesh);
                 if (def) {
-                    focusRoom(def.mesh, def.floor);
+                    focusRoom(def.mesh, def.floor, def.name);
                     return;
                 }
             }
