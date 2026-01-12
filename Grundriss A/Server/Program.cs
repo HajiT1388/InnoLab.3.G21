@@ -52,9 +52,9 @@ _ = webSrv.RunAsync();
 var mqttHost = GetEnv("MQTT_HOST", "test.mosquitto.org");
 var mqttPort = GetEnvInt("MQTT_PORT", 1883);
 var topicPrefix = NormalizeSegment(GetEnv("MQTT_TOPIC_PREFIX", "building/floor"));
-var topicSuffix = NormalizeSegment(GetEnv("MQTT_TOPIC_SUFFIX", "airquality"));
-// building/floor/+/+/airquality
-var subscriptionTopic = CombineTopic(topicPrefix, "+", "+", topicSuffix);
+
+// building/floor/+/room/+/+
+var subscriptionTopic = CombineTopic(topicPrefix, "+", "room", "+", "+");
 
 Console.ForegroundColor = ConsoleColor.Blue;
 Console.WriteLine($"[i] MQTT-Ziel: {mqttHost}:{mqttPort}, Topic {subscriptionTopic}");
