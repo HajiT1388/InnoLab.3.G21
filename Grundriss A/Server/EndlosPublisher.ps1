@@ -1,7 +1,3 @@
-# EndlosPublisher.ps1
-# nur Räume, alle 5 Sekunden
-# bleibt offen, wenn mosquitto_pub fehlt
-
 $possible = @(
     "C:\Program Files\mosquitto\mosquitto_pub.exe",
     "C:\Program Files (x86)\mosquitto\mosquitto_pub.exe",
@@ -15,55 +11,41 @@ foreach ($p in $possible) {
 }
 
 if (-not $pub) {
-    Write-Host "mosquitto_pub wurde nicht gefunden." -ForegroundColor Red
-    Write-Host "Bitte installieren oder Pfad im Skript anpassen." -ForegroundColor Red
-    Read-Host "RETURN zum Beenden"
     exit 1
 }
 
-Write-Host "Publisher läuft ... (STRG+C zum Abbrechen)" -ForegroundColor Green
+Write-Host "STRG+C = ENDE" -ForegroundColor Green
+
+$rooms = @{
+    2 = @("A1.04B","A2.07","A2.12")
+    3 = @("A3.06","A3.11")
+    4 = @("A4.36")
+    5 = @("A5.09","A5.11","A5.18")
+    6 = @("A6.09","A6.23","A6.28")
+}
+
+function Publish-Metric($floor, $room, $metric, $value){
+    & $pub -h test.mosquitto.org -p 1883 `
+           -t "building/floor/$floor/room/$room/$metric" `
+           -m $value -q 1
+}
 
 while ($true) {
+    foreach ($floor in $rooms.Keys) {
+        foreach ($room in $rooms[$floor]) {
+            $aq   = Get-Random -Minimum 0 -Maximum 100
+            $co2  = Get-Random -Minimum 0 -Maximum 3000
+            $temp = [math]::Round((Get-Random -Minimum 6 -Maximum 40), 1)
+            $rh   = Get-Random -Minimum 0 -Maximum 100
+            $pres = Get-Random -Minimum 950 -Maximum 1070
 
-    # 2. Stock
-    "A1.04B","A2.07","A2.12" | ForEach-Object {
-        $value = Get-Random -Minimum 0 -Maximum 100
-        & $pub -h test.mosquitto.org -p 1883 `
-               -t "building/floor/2/room/$_/airquality" `
-               -m $value -q 1
+            Publish-Metric $floor $room "airquality" $aq
+            Publish-Metric $floor $room "co2" $co2
+            Publish-Metric $floor $room "temperature" $temp
+            Publish-Metric $floor $room "humidity" $rh
+            Publish-Metric $floor $room "pressure" $pres
+        }
     }
 
-    # 3. Stock
-    "A3.06","A3.11" | ForEach-Object {
-        $value = Get-Random -Minimum 0 -Maximum 100
-        & $pub -h test.mosquitto.org -p 1883 `
-               -t "building/floor/3/room/$_/airquality" `
-               -m $value -q 1
-    }
-
-    # 4. Stock
-    "A4.36" | ForEach-Object {
-        $value = Get-Random -Minimum 0 -Maximum 100
-        & $pub -h test.mosquitto.org -p 1883 `
-               -t "building/floor/4/room/$_/airquality" `
-               -m $value -q 1
-    }
-
-    # 5. Stock
-    "A5.09","A5.11","A5.18" | ForEach-Object {
-        $value = Get-Random -Minimum 0 -Maximum 100
-        & $pub -h test.mosquitto.org -p 1883 `
-               -t "building/floor/5/room/$_/airquality" `
-               -m $value -q 1
-    }
-
-    # 6. Stock
-    "A6.09","A6.23","A6.28" | ForEach-Object {
-        $value = Get-Random -Minimum 0 -Maximum 100
-        & $pub -h test.mosquitto.org -p 1883 `
-               -t "building/floor/6/room/$_/airquality" `
-               -m $value -q 1
-    }
-
-    Start-Sleep -Seconds 5
+    Start-Sleep -Seconds 15
 }

@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LiveFloorServer
 {
@@ -16,8 +17,15 @@ namespace LiveFloorServer
         private const int FloorCount = 7;
         private int[] _currentFloors = Enumerable.Repeat(100, FloorCount).ToArray();
         private Dictionary<int, Dictionary<string, int>> _currentRooms = new();
+        private Dictionary<int, Dictionary<string, RoomDetailPayload>> _currentRoomDetails = new();
 
         private readonly SemaphoreSlim _broadcastLock = new(1, 1);
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
 
         private static readonly Dictionary<string, string> _mime = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -68,7 +76,10 @@ namespace LiveFloorServer
             }
         }
 
-        public async Task BroadcastAsync(int[] floors, Dictionary<int, Dictionary<string, int>> rooms)
+        public async Task BroadcastAsync(
+            int[] floors,
+            Dictionary<int, Dictionary<string, int>> rooms,
+            Dictionary<int, Dictionary<string, RoomDetailPayload>> roomDetails)
         {
             await _broadcastLock.WaitAsync();
             try
@@ -78,9 +89,13 @@ namespace LiveFloorServer
                     x => x.Key,
                     x => x.Value.ToDictionary(i => i.Key, i => i.Value, StringComparer.OrdinalIgnoreCase)
                 );
+                _currentRoomDetails = roomDetails.ToDictionary(
+                    x => x.Key,
+                    x => x.Value.ToDictionary(i => i.Key, i => i.Value, StringComparer.OrdinalIgnoreCase)
+                );
 
                 foreach (var kv in _clients)
-                    await SendAsync(kv.Value, _currentFloors, _currentRooms);
+                    await SendAsync(kv.Value, _currentFloors, _currentRooms, _currentRoomDetails);
             }
             finally
             {
@@ -106,7 +121,7 @@ namespace LiveFloorServer
             _clients.TryAdd(id, ws);
             Log($"WebSocket-Client verbunden ({_clients.Count})");
 
-            await SendAsync(ws, _currentFloors, _currentRooms);
+            await SendAsync(ws, _currentFloors, _currentRooms, _currentRoomDetails);
 
             var buffer = new byte[1];
             try
@@ -125,17 +140,22 @@ namespace LiveFloorServer
             }
         }
 
-        private static async Task SendAsync(WebSocket ws, int[] floors, Dictionary<int, Dictionary<string, int>> rooms)
+        private static async Task SendAsync(
+            WebSocket ws,
+            int[] floors,
+            Dictionary<int, Dictionary<string, int>> rooms,
+            Dictionary<int, Dictionary<string, RoomDetailPayload>> roomDetails)
         {
             if (ws.State != WebSocketState.Open) return;
 
             var payload = new
             {
                 values = floors,
-                rooms = rooms
+                rooms,
+                roomDetails
             };
 
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, JsonOptions);
             var bytes = Encoding.UTF8.GetBytes(json);
 
             try
