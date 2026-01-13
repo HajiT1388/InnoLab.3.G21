@@ -30,11 +30,10 @@ $rooms = @{
 
 Write-Host ("[i] MQTT Publisher -> {0}:{1}, Topic '{2}/<floor>/room/<room>/<metric}', Interval {3}s" -f $broker, $port, $topicPrefix, $intervalSeconds)
 
-# 3. Die Publish-Metric Funktion (Direktaufruf mosquitto_pub)
 function Publish-Metric($floor, $room, $metric, $value) {
-    # Erzeugt den Pfad: building/floor/$floor/room/$room/$metric
+    # Topic: building/floor/$floor/room/$room/$metric
     $topic = "$topicPrefix/$floor/room/$room/$metric"
-    # Punkt statt Komma für C# (Wichtig für Temperatur/Druck)
+    # (Wichtig für Temperatur/Druck)
     $valString = $value.ToString().Replace(',', '.') 
 
     try {
