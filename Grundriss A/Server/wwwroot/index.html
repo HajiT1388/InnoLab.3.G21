@@ -104,7 +104,6 @@
             border-radius: 999px
         }
 
-        /* Badge-Palette: grün für hohe Werte, warm amber für Mittel, coral für niedrig */
         .badge-green { background: #61d38b; color: #0e1a12; }
         .badge-yellow { background: #f2b94c; color: #1e1e1e; }
         .badge-red { background: #f16c5b; color: #1e1e1e; }
@@ -163,7 +162,6 @@
                 pointer-events: none
             }
 
-        /* Detail-Drawer mit Luftqualitäts-UI */
         #detailDrawer {
             position: fixed;
             top: 0;
@@ -910,13 +908,38 @@
         }
         buildRoomUI();
 
+        function badgeColorForScore(val) {
+            const s = clamp(Number(val) || 0, 0, 100) / 100;
+            const stops = [
+                { t: 0, c: [241, 108, 91] },
+                { t: 0.55, c: [242, 185, 76] },
+                { t: 1, c: [97, 211, 139] }
+            ];
+            let a = stops[0], b = stops[stops.length - 1];
+            for (let i = 1; i < stops.length; i++) {
+                if (s <= stops[i].t) { b = stops[i]; a = stops[i - 1]; break; }
+            }
+            const span = b.t - a.t || 1;
+            const t = clamp((s - a.t) / span, 0, 1);
+            const col = a.c.map((v, idx) => Math.round(v + (b.c[idx] - v) * t));
+            return { bg: `rgb(${col[0]}, ${col[1]}, ${col[2]})`, text: s > 0.7 ? "#0e1a12" : "#1a1a1a" };
+        }
+
         function setRoomBadge(f, name, val) {
             const id = `room-${f}-${name.replace(/[^a-zA-Z0-9]/g, "_")}`;
             const el = document.getElementById(id);
             if (!el) return;
             const b = el.querySelector(".badge");
-            b.textContent = val;
-            b.className = `badge badge-val ${val >= 1400 ? "badge-red" : val >= 800 ? "badge-yellow" : "badge-green"}`;
+            const num = Number(val);
+            if (!Number.isFinite(num)) {
+                clearRoomBadge(f, name);
+                return;
+            }
+            const { bg, text } = badgeColorForScore(num);
+            b.textContent = typeof val === "number" ? val : num;
+            b.className = "badge badge-val";
+            b.style.backgroundColor = bg;
+            b.style.color = text;
         }
         function clearRoomBadge(f, name) {
             const id = `room-${f}-${name.replace(/[^a-zA-Z0-9]/g, "_")}`;
@@ -925,6 +948,8 @@
             const b = el.querySelector(".badge");
             b.textContent = "–";
             b.className = "badge badge-val badge-gray";
+            b.style.backgroundColor = "";
+            b.style.color = "";
         }
 
         function updateDropdownLabel() {
@@ -1237,7 +1262,7 @@
             ws.onerror = err => console.error("WS Fehler:", err);
             ws.onclose = () => {
                 console.warn("WS Verbindung geschlossen. Reconnect in 5s...");
-                setTimeout(openWs, 5000); // Automatischer Reconnect
+                setTimeout(openWs, 5000);
             };
         })();
 
