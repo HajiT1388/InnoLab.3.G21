@@ -1,0 +1,90 @@
+﻿kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: innolab3g21-server
+  namespace: team21-fiware
+  uid: 101cb0bf-8c10-41ea-b2cd-97364a4377fe
+  resourceVersion: '1031442381'
+  generation: 21
+  creationTimestamp: '2026-01-13T08:06:56Z'
+  labels:
+    app: innolab3g21-server
+    app.kubernetes.io/component: innolab3g21-server
+    app.kubernetes.io/instance: innolab3g21-server
+    app.kubernetes.io/name: innolab3g21-server
+    app.kubernetes.io/part-of: 3D-Modell
+    app.openshift.io/runtime: windows
+    app.openshift.io/runtime-namespace: team21-fiware
+    app.openshift.io/runtime-version: latest
+  annotations:
+    alpha.image.policy.openshift.io/resolve-names: '*'
+    app.openshift.io/route-disabled: 'false'
+    deployment.kubernetes.io/revision: '9'
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"innolab3g21-server:latest","namespace":"team21-fiware"},"fieldPath":"spec.template.spec.containers[?(@.name==\"innolab3g21-server\")].image","pause":"false"}]
+    openshift.io/generated-by: OpenShiftWebConsole
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: innolab3g21-server
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: innolab3g21-server
+        deployment: innolab3g21-server
+      annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+        openshift.openshift.io/restartedAt: '2026-01-13T08:48:13.371Z'
+    spec:
+      containers:
+        - name: innolab3g21-server
+          image: 'docker.io/if23b269/okd-innolab3g21-server:latest'
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: MQTT_HOST
+              value: mosquitto
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: dockerhub-auth
+        - name: dockerhub-auth
+        - name: dockerhub-auth
+        - name: dockerhub-auth
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  paused: false
+status:
+  observedGeneration: 21
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  conditions:
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2026-01-13T10:36:59Z'
+      lastTransitionTime: '2026-01-13T08:06:56Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "innolab3g21-server-7cc78598cd" has successfully progressed.
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2026-01-21T13:21:43Z'
+      lastTransitionTime: '2026-01-21T13:21:43Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
